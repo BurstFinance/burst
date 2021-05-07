@@ -1,0 +1,13 @@
+{
+  "name": "burst.finance",
+  "version": "1.0.0",
+  "scripts": {
+    "migrate": "truffle migrate --network development --reset",
+    "compile": "truffle compile --network development",
+    "test": "npx builder test",
+    "coverage": "npx builder coverage"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.0.0",
+  }
+}
