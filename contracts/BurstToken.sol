@@ -115,23 +115,22 @@ contract BurstToken is ERC20, Ownable {
     }
 
     // stake token
-    function stakeToken(IERC20 _token) public {
+    function stakeToken(IERC20 _token, uint256 _stakeAmount) public {
         address _sender = msg.sender;
-        uint256 allowanceAmount = _token.allowance(_sender, address(this));
         uint256 senderBallance = _token.balanceOf(_sender);
 
-        require(allowanceAmount > 0, "BRT: Not enough allowance to stake");
-        require(senderBallance >= allowanceAmount, "BRT: Not enough ballance to stake");
+        require(_stakeAmount > 0, "BRT: staked token counts should > 0");
+        require(senderBallance >= _stakeAmount, "BRT: Not enough ballance to stake");
 
-        _token.transferFrom(_sender, address(this), allowanceAmount);
+        _token.transferFrom(_sender, address(this), _stakeAmount);
 
         uint idx = stakeIndex[_sender];
         if(idx > 0) {
-            stakePool[idx].s = stakePool[idx].s.add(allowanceAmount);
+            stakePool[idx].s = stakePool[idx].s.add(_stakeAmount);
         } else {
             stakePool.push(StakeItem({
                 a: _sender,
-                s: allowanceAmount
+                s: _stakeAmount
             }));
             stakeIndex[_sender] = stakePool.length - 1;
         }
