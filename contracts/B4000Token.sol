@@ -12,14 +12,20 @@ contract B4000Token is ERC20, Ownable {
 
     mapping(address => bool) private adminMap;
 
-    mapping(address => uint256) public _b4kBalance;
-
-    mapping(address => uint) private stakeIndex;
     struct StakeItem {
         address a; // address
         uint256 s; // stake count
     }
+    mapping(address => uint) private stakeIndex;
     StakeItem[] public stakePool;
+
+    // NFT cards mine rewards
+    mapping(address => uint256) public nftBalance;
+    // LP stake mine data
+    mapping(address => uint256) public LPBalance;
+    // b4k stake mine data
+    mapping(address => uint256) public coinBalance;
+    // mapping(address => uint256) public _b4kBalance;
 
     constructor(address _admin) ERC20("B4000 Coin", "B4K") {
         adminMap[_admin] = true;
@@ -36,6 +42,67 @@ contract B4000Token is ERC20, Ownable {
         _;
     }
 
+    // ==================== NFT mine ====================
+    function nftBalanceOf(address _addr) public view returns(uint256) {
+        return nftBalance[_addr];
+    }
+    // harvest nft mine rewards
+    function harvestNftMineBalance() public {
+        address _sender = msg.sender;
+        require(nftBalance[_sender] > 0, "B4K: Not enough NFT rewards to harvest");
+        _mint(_sender, nftBalance[_sender]);
+        nftBalance[_sender] = 0;
+    }
+    // mint b4k to nft owners
+    function batchMintNft(address[] memory _addr, uint256[] memory _mineCount) public onlyOwnerAdmin {
+        require(isMining, "B4K: has stoped mine");
+        for (uint i = 0; i < _addr.length; i++) {
+            nftBalance[_addr[i]] = nftBalance[_addr[i]].add(_mineCount[i]);
+        }
+    }
+    // ==================== NFT mine ====================
+
+    // ==================== LP stake mine ====================
+    function LPBalanceOf(address _addr) public view returns(uint256) {
+        return LPBalance[_addr];
+    }
+    // harvest LP stake mine rewards
+    function harvestLPMineBalance() public {
+        address _sender = msg.sender;
+        require(LPBalance[_sender] > 0, "B4K: Not enough LP stake rewards to harvest");
+        _mint(_sender, LPBalance[_sender]);
+        LPBalance[_sender] = 0;
+    }
+    // mint b4k to LP stakers
+    function batchMintLP(address[] memory _addr, uint256[] memory _mineCount) public onlyOwnerAdmin {
+        require(isMining, "B4K: has stoped mine");
+        for (uint i = 0; i < _addr.length; i++) {
+            LPBalance[_addr[i]] = LPBalance[_addr[i]].add(_mineCount[i]);
+        }
+    }
+    // ==================== LP stake mine ====================
+
+
+    // ==================== B4k Coin stake mine ====================
+    function coinBalanceOf(address _addr) public view returns(uint256) {
+        return coinBalance[_addr];
+    }
+    // harvest b4k stake mine rewards
+    function harvestCoinBalance() public {
+        address _sender = msg.sender;
+        require(coinBalance[_sender] > 0, "B4K: Not enough b4k rewards to harvest");
+        _mint(_sender, coinBalance[_sender]);
+        coinBalance[_sender] = 0;
+    }
+    function batchMintCoin(address[] memory _addr, uint256[] memory _mineCount) public onlyOwnerAdmin {
+        require(isMining, "B4K: has stoped mine");
+        for (uint i = 0; i < _addr.length; i++) {
+            coinBalance[_addr[i]] = coinBalance[_addr[i]].add(_mineCount[i]);
+        }
+    }
+    // ==================== B4k Coin stake mine ====================
+
+    // ==================== stake B4K ====================
     function getStakeData() public view returns(StakeItem[] memory) {
         uint total = stakePool.length;
         StakeItem[] memory arr = new StakeItem[](total);
@@ -89,13 +156,13 @@ contract B4000Token is ERC20, Ownable {
         increaseStakePool(_sender, _count);
     }
 
-    // stake all user's rewards from _b4kBalance
-    function stakeBalance() public {
+    // compound: stake user's all rewards from coinBalance
+    function compoundCoinRewards() public {
         address _sender = msg.sender;
-        uint256 ballance = _b4kBalance[_sender];
-        require(ballance > 0, "B4K: Not enough _b4kBalance to stake");
+        uint256 ballance = coinBalance[_sender];
+        require(ballance > 0, "B4K: Not enough b4k rewards to stake");
 
-        _b4kBalance[_sender] = 0;
+        coinBalance[_sender] = 0;
         increaseStakePool(_sender, ballance);
         _mint(address(this), ballance);
     }
@@ -113,6 +180,8 @@ contract B4000Token is ERC20, Ownable {
         }
     }
 
+    // ==================== stake B4K ====================
+
     function startMine() public onlyOwner {
         isMining = true;
     }
@@ -128,30 +197,6 @@ contract B4000Token is ERC20, Ownable {
     }
     function isAdmin(address _addr) public view returns (bool) {
         return adminMap[_addr];
-    }
-
-    function batchUpdateBalance(address[] memory _addr, uint256[] memory _mineCount) public onlyOwnerAdmin {
-        require(isMining, "B4K: has stoped mine");
-        for (uint i = 0; i < _addr.length; i++) {
-            _b4kBalance[_addr[i]] = _b4kBalance[_addr[i]].add(_mineCount[i]);
-        }
-    }
-    function withdrawBalance() public {
-        address _sender = msg.sender;
-        require(_b4kBalance[_sender] > 0, "B4K: Not enough b4k balance to withdraw");
-        _mint(_sender, _b4kBalance[_sender]);
-        _b4kBalance[_sender] = 0;
-    }
-
-    function b4kBalanceOf(address _addr) public view returns(uint256) {
-        return _b4kBalance[_addr];
-    }
-
-    function batchMint(address[] memory _addr, uint256[] memory _mineCount) public onlyOwnerAdmin {
-        require(isMining, "B4K: has stoped mine");
-        for (uint i = 0; i < _addr.length; i++) {
-            _mint(_addr[i], _mineCount[i]);
-        }
     }
 
     function mintTo(address _addr, uint256 _mineCount) public onlyOwnerAdmin {
