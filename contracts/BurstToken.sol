@@ -24,6 +24,7 @@ contract BurstToken is ERC20, Ownable {
         address a; // address
         uint256 s; // stake count
     }
+    // stake LP
     StakeItem[] public stakePool;
 
     // node info object
@@ -72,6 +73,7 @@ contract BurstToken is ERC20, Ownable {
         nodePool[_nid].p = _price;
     }
 
+    // ==================== stake LP ====================
     function getStakeData() public view returns(StakeItem[] memory) {
         uint total = stakePool.length;
         StakeItem[] memory arr = new StakeItem[](total);
@@ -114,7 +116,7 @@ contract BurstToken is ERC20, Ownable {
         });
     }
 
-    // stake token
+    // stake LP token
     function stakeToken(IERC20 _token, uint256 _stakeAmount) public {
         address _sender = msg.sender;
         uint256 senderBallance = _token.balanceOf(_sender);
@@ -135,6 +137,7 @@ contract BurstToken is ERC20, Ownable {
             stakeIndex[_sender] = stakePool.length - 1;
         }
     }
+    // ==================== stake LP ====================
 
     // buy card
     function buyCard(uint256 _nid) public payable {
