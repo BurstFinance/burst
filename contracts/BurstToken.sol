@@ -14,7 +14,8 @@ contract BurstToken is ERC20, Ownable {
     /* ========== DATA ========== */
 
     // unit price of each node
-    uint public constant NODE_PRICE = 5000000000000000000 wei; // 5 HT
+    uint public constant NODE_PRICE = 5e18 wei; // 5 HT
+    // uint public constant NODE_PRICE = 0.01e18 wei; // 0.01 HT
 
     // total count of node
     uint public constant NODE_TOTAL = 4000;
@@ -42,7 +43,6 @@ contract BurstToken is ERC20, Ownable {
     event onBRTOneNodeBuyed(uint256 _nid, address _buyer, uint256 _currentPrice, uint256 _nextPrice);
 
     constructor() ERC20("Burst Token", "BRT") {
-        // _mint(msg.sender, NODE_TOTAL);
         stakeIndex[address(this)] = 0;
         stakePool.push(StakeItem({
             a: address(this),
@@ -101,6 +101,7 @@ contract BurstToken is ERC20, Ownable {
     }
 
     function withdrawStake(IERC20 _token, uint256 _count) public {
+        require(_count > 0, "BRT: withdrawn token counts should > 0");
         address _sender = msg.sender;
         uint idx = stakeIndex[_sender];
         require(idx > 0, "BRT: Not stake any token before");
@@ -109,11 +110,11 @@ contract BurstToken is ERC20, Ownable {
         uint256 balance = st.s;
         require(balance >= _count, "BRT: Not enough staked blance to withdraw");
 
-        _token.safeTransfer(_sender, _count);
         stakePool[idx] = StakeItem({
             a: _sender,
             s: st.s.sub(_count)
         });
+        _token.safeTransfer(_sender, _count);
     }
 
     // stake LP token
@@ -123,8 +124,6 @@ contract BurstToken is ERC20, Ownable {
 
         require(_stakeAmount > 0, "BRT: staked token counts should > 0");
         require(senderBallance >= _stakeAmount, "BRT: Not enough ballance to stake");
-
-        _token.transferFrom(_sender, address(this), _stakeAmount);
 
         uint idx = stakeIndex[_sender];
         if(idx > 0) {
@@ -136,6 +135,7 @@ contract BurstToken is ERC20, Ownable {
             }));
             stakeIndex[_sender] = stakePool.length - 1;
         }
+        _token.transferFrom(_sender, address(this), _stakeAmount);
     }
     // ==================== stake LP ====================
 
@@ -155,9 +155,8 @@ contract BurstToken is ERC20, Ownable {
             nodePrice = NODE_PRICE;
         }
 
-        // 1. msg.value >= nodePrice && banlance >= nodePrice
-        uint256 buyerBallance = buyer.balance;
-        require(_in >= nodePrice && buyerBallance >= nodePrice, "BRT: Not enough ballance to buy card");
+        // 1. msg.value >= nodePrice
+        require(_in >= nodePrice, "BRT: Not enough ballance to buy card");
 
         // 2. Not first buy
         if (!isOriginNode) {
