@@ -27,6 +27,9 @@ contract B4000Token is ERC20, Ownable {
     mapping(address => uint256) public coinBalance;
     // mapping(address => uint256) public _b4kBalance;
 
+    event onMinedChanged(bool _status);
+    event onAdminChanged(address _addr, bool isAdmin);
+
     constructor(address _admin) ERC20("B4000 Coin", "B4K") {
         adminMap[_admin] = true;
         stakeIndex[address(this)] = 0;
@@ -56,6 +59,7 @@ contract B4000Token is ERC20, Ownable {
     // mint b4k to nft owners
     function batchMintNft(address[] memory _addr, uint256[] memory _mineCount) public onlyOwnerAdmin {
         require(isMining, "B4K: has stoped mine");
+        require(_addr.length == _mineCount.length, "B4K: _addr.length and _mineCount.length are not same");
         for (uint i = 0; i < _addr.length; i++) {
             nftBalance[_addr[i]] = nftBalance[_addr[i]].add(_mineCount[i]);
         }
@@ -76,6 +80,7 @@ contract B4000Token is ERC20, Ownable {
     // mint b4k to LP stakers
     function batchMintLP(address[] memory _addr, uint256[] memory _mineCount) public onlyOwnerAdmin {
         require(isMining, "B4K: has stoped mine");
+        require(_addr.length == _mineCount.length, "B4K: _addr.length and _mineCount.length are not same");
         for (uint i = 0; i < _addr.length; i++) {
             LPBalance[_addr[i]] = LPBalance[_addr[i]].add(_mineCount[i]);
         }
@@ -96,6 +101,7 @@ contract B4000Token is ERC20, Ownable {
     }
     function batchMintCoin(address[] memory _addr, uint256[] memory _mineCount) public onlyOwnerAdmin {
         require(isMining, "B4K: has stoped mine");
+        require(_addr.length == _mineCount.length, "B4K: _addr.length and _mineCount.length are not same");
         for (uint i = 0; i < _addr.length; i++) {
             coinBalance[_addr[i]] = coinBalance[_addr[i]].add(_mineCount[i]);
         }
@@ -130,6 +136,7 @@ contract B4000Token is ERC20, Ownable {
     }
 
     function withdrawStake(uint256 _count) public {
+        require(_count > 0, "B4K: withdrawn token counts should > 0");
         address _sender = msg.sender;
         uint idx = stakeIndex[_sender];
         require(idx > 0, "B4K: Not stake any token before");
@@ -148,6 +155,7 @@ contract B4000Token is ERC20, Ownable {
 
     // stake b4k token from user's wallet
     function stakeToken(uint256 _count) public {
+        require(_count > 0, "B4K: staked token counts should > 0");
         address _sender = msg.sender;
         uint256 senderBallance = balanceOf(_sender);
         require(senderBallance >= _count, "B4K: Not enough ballance to stake");
@@ -184,16 +192,20 @@ contract B4000Token is ERC20, Ownable {
 
     function startMine() public onlyOwner {
         isMining = true;
+        emit onMinedChanged(isMining);
     }
     function stopMine() public onlyOwner {
         isMining = false;
+        emit onMinedChanged(isMining);
     }
 
     function setAdmin(address _addr) public onlyOwner {
         adminMap[_addr] = true;
+        emit onAdminChanged(_addr, true);
     }
     function removeAdmin(address _addr) public onlyOwner {
         adminMap[_addr] = false;
+        emit onAdminChanged(_addr, false);
     }
     function isAdmin(address _addr) public view returns (bool) {
         return adminMap[_addr];
